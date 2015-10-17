@@ -1,12 +1,18 @@
 #!/bin/bash
 
-exec 4>"${HOME}/symlinks.log" 3>&1
+[ ${DEBUG+on} ] &&
+	exec 4>"${HOME}/symlinks.log" 3>&1 ||
+	exec 4>&1 3>&1
 
-function output_to_log() {
+vlog() {
+	[ ${VERBOSE+on} ] && echo "$*"
+}
+
+output_to_log() {
 	exec >&4
 }
 
-function output_to_stdout() {
+output_to_stdout() {
 	exec >&3
 }
 
@@ -25,7 +31,7 @@ echo "Source prefix: ${SOURCE_PREFIX}"
 
 output_to_log
 
-function failure_message() {
+failure_message() {
 	exec 5>&1
 	output_to_stdout
 	echo "Failed to create link to '${1}'. Please create it with:"
@@ -33,28 +39,28 @@ function failure_message() {
 	exec >&5
 }
 
-function link() {
+link() {
 	output_to_log
 	SOURCE="${SOURCE_PREFIX}"/"${1}"
 	TARGET="${HOME}"/"${2}"
 
-	echo "Creating symlink to ${SOURCE} at ${TARGET}"
+	vlog "Creating symlink to ${SOURCE} at ${TARGET}"
 
 	LINK_CMD="ln -s \"${SOURCE}\" \"${TARGET}\""
 
 	if [ -e "${TARGET}" ]
 	then
-		echo "  ${TARGET} already exists . . ."
+		vlog "  ${TARGET} already exists . . ."
 
 		if [ -L "${TARGET}" ]
 		then
-			echo "  . . . but it's a symlink!"
+			vlog "  . . . but it's a symlink!"
 			if [ $(readlink "${TARGET}") == "${SOURCE}" ]
 			then
-				echo "  . . . pointing to the right file!"
+				vlog "  . . . pointing to the right file!"
 			else
 				failure_message "${SOURCE}" "${TARGET}"
-				echo "  . . . pointing to the wrong file!"
+				vlog "  . . . pointing to the wrong file!"
 			fi
 		fi
 

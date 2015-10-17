@@ -1,8 +1,41 @@
 execute pathogen#infect()
 
-autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
+set nocompatible
+
+ map  <Home>
+ map  <End>
+imap  <Home>
+imap  <End>
+
+filetype on
+syntax on
+
+set number ruler
+set modeline modelines=5
+set virtualedit=all
+set mouse=a
+set ttymouse=xterm2
+set mousem=extend
 
 map <F2> :NERDTreeToggle<CR>
 
-set ruler
+" Append modeline after last line in buffer.
+" Use substitute() instead of printf() to handle '%%s' modeline in LaTeX
+" files.
+function! AppendModeline()
+  let l:modeline = printf(" vim: set ts=%d sw=%d tw=%d %set :",
+        \ &tabstop, &shiftwidth, &textwidth, &expandtab ? '' : 'no')
+  let l:modeline = substitute(&commentstring, "%s", l:modeline, "")
+  call append(line("$"), l:modeline)
+endfunction
+nnoremap <silent> <Leader>ml :call AppendModeline()<CR>
+
+augroup vimrc
+    au!
+    au BufNewFile,BufRead *.pp setf puppet
+
+    au StdinReadPre * let s:std_in=1
+    au VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
+
+    au BufWritePost $MYVIMRC source $MYVIMRC
+augroup END

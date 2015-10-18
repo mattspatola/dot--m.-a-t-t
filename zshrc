@@ -137,6 +137,7 @@ tmux-handler() {
 	fi
 }
 alias tm='tmux-handler'
+alias tmls='tmux ls'
 
 alias du='du -Lch'
 sdu() {

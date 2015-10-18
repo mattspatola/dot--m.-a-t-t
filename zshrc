@@ -278,6 +278,9 @@ new-widget vlc-control-widget	'^q'
 new-widget dl-magnet-widget	'^s'
 bindkey '\ee' edit-command-line
 
+bindkey '\e[1;9D' backward-word
+bindkey '\e[1;9C' forward-word
+
 local ZSHRC_TIME_FORMAT='%Y/%m/%d:%H:%M:%S'
 current_time() {
 	 strftime $ZSHRC_TIME_FORMAT $EPOCHSECONDS

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
 [ ${DEBUG+on} ] &&
 	exec 4>"${HOME}/symlinks.log" 3>&1 ||
@@ -16,18 +16,18 @@ output_to_stdout() {
 	exec >&3
 }
 
-SCRIPT="$(grealpath "$0")"
-BASE="$(dirname "$(dirname "$(grealpath "$0")")")"
-WITHOUT_HOME="${BASE##${HOME}/}"
+local base without_home source_prefix
 
-if [[ "${WITHOUT_HOME}" != "${BASE}" ]]
-then
-	SOURCE_PREFIX="${WITHOUT_HOME}"
+base=$0:A:h:h
+without_home="${base##${HOME}/}"
+
+if [[ "${without_home}" != "${base}" ]]; then
+	source_prefix="${without_home}"
 else
-	SOURCE_PREFIX="${BASE}"
+	source_prefix="${base}"
 fi
 
-echo "Source prefix: ${SOURCE_PREFIX}"
+echo "Source prefix: ${source_prefix}"
 
 output_to_log
 
@@ -41,52 +41,47 @@ failure_message() {
 
 link() {
 	output_to_log
-	SOURCE="${SOURCE_PREFIX}"/"${1}"
-	TARGET="${HOME}"/"${2}"
+	local source="${source_prefix}"/"${1}" target="${HOME}"/"${2}"
 
-	vlog "Creating symlink to ${SOURCE} at ${TARGET}"
+	vlog "Creating symlink to ${source} at ${target}"
 
-	LINK_CMD="ln -s \"${SOURCE}\" \"${TARGET}\""
+	link_cmd=( ln -s $source $target )
 
-	if [ -e "${TARGET}" ]
+	if [ -e "${target}" ]
 	then
-		vlog "  ${TARGET} already exists . . ."
+		vlog "  ${target} already exists . . ."
 
-		if [ -L "${TARGET}" ]
+		if [ -L "${target}" ]
 		then
 			vlog "  . . . but it's a symlink!"
-			if [ $(readlink "${TARGET}") == "${SOURCE}" ]
+			if [[ $(readlink "${target}") = "${source}" ]]
 			then
 				vlog "  . . . pointing to the right file!"
 			else
-				failure_message "${SOURCE}" "${TARGET}"
+				failure_message "${source}" "${target}"
 				vlog "  . . . pointing to the wrong file!"
 			fi
 		fi
 
 		return
 	fi
-	bash -c "${LINK_CMD}"
+	$link_cmd
 }
 
 output_to_stdout
 
-EXCLUDED="  scripts  README.md  LICENSE  "
+#local excluded="  scripts  README.md  LICENSE  "
+local -a excluded
+excluded=( scripts README.md LICENSE )
 
-echo "${BASE}" >&3
-for path in "${BASE}"/*
+echo "${base}" >&3
+for node in "${base}"/*
 do
-	entry="${path##${BASE}/}"
-	if [ "$entry" != "$path" ]
-	then
-		padded=" ${entry} "
-		trimmed="${EXCLUDED/  ${entry}  /}"
-		if [[ "$trimmed" == "${EXCLUDED}" ]]
-		then
-			link "$entry" '.'"$entry"
-		fi
-	fi
+	local entry="${node##${base}/}"
+	[[ -z $excluded[(r)$entry] ]] && link $entry .$entry
 done
 
 #link vim .vim
 link vim/vimrc .vimrc
+
+# vim: set ts=4 sw=4 tw=0 noet ft=zsh :

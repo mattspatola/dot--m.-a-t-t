@@ -1,7 +1,7 @@
 [[ $0 = '-zsh' ]] && local login=${login-true}
 
 # Path to your oh-my-zsh installation.
-export ZSH=/Users/matt/.oh-my-zsh
+export ZSH=${ZSH:-$HOME/.oh-my-zsh}
 #export PAGER='less -is'
 export EDITOR=vim
 export TMUX_TMPDIR=~/.tmux/tmp
@@ -261,10 +261,10 @@ autoload -U zcalc
 autoload -Uz {dl-magnet,vlc-control}-widget
 
 {
-        local -aU user_fpath
-        user_fpath=( "$HOME/share/zsh/functions" $fpath )
-        fpath=( $user_fpath )
-        unset user_fpath
+	local -aU user_fpath
+	user_fpath=( "$HOME/share/zsh/functions" $fpath )
+	fpath=( $user_fpath )
+	unset user_fpath
 }
 
 new-widget() {

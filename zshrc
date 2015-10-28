@@ -5,7 +5,7 @@ exec 3>&1 4>&2 5>/dev/null
 if [[ -n $VERBOSE || -n $DEBUG ]]; then
   exec 1>&3 2>&4
 else
-  exec 1>&5 2>&5
+  exec 1>&5
 fi
 
 local overrides_file="$HOME/.zshrc.local"
@@ -90,10 +90,13 @@ plugins=(git rails bundler)
 #PATH="$(echo "/opt/boxen/"{rb,nod}"env/"{bin,shims} | tr ' ' ':'):$PATH"
 #PATH="$(echo "$HOME/"{bin,src/android-sdk/tools} | tr \  :):$PATH"
 
-eval "$(MANPATH= PATH= /usr/libexec/path_helper)"
+if [[ -x /usr/libexec/path_helper ]]; then
+  eval "$(MANPATH= PATH= /usr/libexec/path_helper)"
+fi
 
 [[ -f /opt/boxen/env.sh ]] && source /opt/boxen/env.sh
 
+which gsed &>/dev/null || alias gsed=sed
 PATH="$(echo "$HOME/"{bin,src/android-sdk/{,platform-}tools} | gsed 's/ \//:\//g'):$PATH"
 
 [[ -d $ZSH && -f $ZSH/oh-my-zsh.sh ]] && source $ZSH/oh-my-zsh.sh

@@ -1,10 +1,25 @@
 [[ $0 = '-zsh' ]] && local login=${login-true}
 
+exec 3>&1 4>&2 5>/dev/null
+
+if [[ -n $VERBOSE || -n $DEBUG ]]; then
+  exec 1>&3 2>&4
+else
+  exec 1>&5 2>&5
+fi
+
+local overrides_file="$HOME/.zshrc.local"
+overrides-exist() {
+  [[ -f $overrides_file ]]
+}
+
+overrides-exist && source $overrides_file
+
 # Path to your oh-my-zsh installation.
 export ZSH=${ZSH:-$HOME/.oh-my-zsh}
 #export PAGER='less -is'
 export EDITOR=vim
-export TMUX_TMPDIR=~/.tmux/tmp
+[[ -d ~/.tmux/tmp ]] && export TMUX_TMPDIR=${TMUX_TMPDIR:-~/.tmux/tmp}
 
 #echo 'unsetopt:'; unsetopt | grep glob | sed -Ee 's/^/\t/'
 #echo 'setopt:'; setopt | grep glob | sed -Ee 's/^/\t/'
@@ -62,7 +77,7 @@ COMPLETION_WAITING_DOTS="true"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(git rails bundler)
 
 # User configuration
 
@@ -77,13 +92,24 @@ plugins=(git)
 
 eval "$(MANPATH= PATH= /usr/libexec/path_helper)"
 
-source /opt/boxen/env.sh
+[[ -f /opt/boxen/env.sh ]] && source /opt/boxen/env.sh
 
 PATH="$(echo "$HOME/"{bin,src/android-sdk/{,platform-}tools} | gsed 's/ \//:\//g'):$PATH"
 
-source $ZSH/oh-my-zsh.sh
+[[ -d $ZSH && -f $ZSH/oh-my-zsh.sh ]] && source $ZSH/oh-my-zsh.sh
 
-eval "$(gulp --completion=zsh)"
+if-exec-exists() {
+	exec-exists $1 && $@
+}
+
+exec-exists() {
+	for executable in $@; do
+		which $executable || return 1
+	done &>/dev/null
+}
+
+#which gulp &>/dev/null && eval "$(gulp --completion=zsh)"
+exec-exists gulp && eval "$(gulp --completion=zsh)"
 
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
@@ -138,6 +164,10 @@ tmux-handler() {
 }
 alias tm='tmux-handler'
 alias tmls='tmux ls'
+
+if [[ -d /Applications/Dash.app || -d ~/Applications/Dash.app ]]; then
+  alias dash='dash-helper'
+fi
 
 alias du='du -Lch'
 sdu() {
@@ -221,18 +251,13 @@ emu-android-x86_64() {
 	log-all -n "$HOME/logs/emulator.$1" -- $cmd
 }
 
-if [ -n "$TMUX" ];
-then
-	{ alias tmux && unalias tmux } &>/dev/null
-	alias open='reattach-to-user-namespace open'
-else
-	tmux() {/opt/boxen/homebrew/bin/tmux -u $@}
-fi
+exec-exists process-aliases && eval "$(process-aliases)"
 
-eval "$(process-aliases)"
-
-hash -d tv='/opt/TV'
-hash -d dl='/opt/DL'
+#hash -d tv='/opt/TV'
+hash -d dl=/opt/DL
+hash -d media=/media
+hash -d tv=~media/TV
+hash -d movies=~media/Movies
 hash -d vm='/private/var/vm'
 hash -d sleepimage=~vm/sleepimage
 
@@ -247,10 +272,19 @@ hash -d ww-tv=~wally-tv
 hash -d kingston-tv='/Volumes/KINGSTON/TV'
 
 hash -d boxen='/opt/boxen'
-hash -d nodenv='/opt/boxen/nodenv'
-hash -d pyenv='/opt/boxen/pyenv'
-hash -d rbenv='/opt/boxen/rbenv'
-hash -d homebrew='/opt/boxen/homebrew'
+[[ -n "$BOXEN_HOME" ]] && hash -d boxen=$BOXEN_HOME
+[[ -n "$DEV_ROOT" ]] && hash -d dev=$DEV_ROOT
+[[ -n "$NODENV_ROOT" ]] && hash -d nodenv=$NODENV_ROOT
+[[ -n "$PYENV_ROOT" ]] && hash -d pyenv=$PYENV_ROOT
+[[ -n "$RBENV_ROOT" ]] && hash -d rbenv=$RBENV_ROOT
+exec-exists brew && {
+  hash -d homebrew=$(brew --prefix)
+  fpath=( ~homebrew/share/zsh-completions $fpath )
+}
+
+which nodenv &>/dev/null && eval "$(nodenv init -)"
+which pyenv &>/dev/null && eval "$(pyenv init -)"
+which rbenv &>/dev/null && eval "$(rbenv init -)"
 
 export LESS="$LESS -iS" # was '$LESS -is', but I removed squeeze repeated blank lines
 
@@ -258,13 +292,40 @@ zmodload zsh/datetime zsh/stat
 autoload -U read-from-minibuffer
 autoload -U calendar age before after
 autoload -U zcalc
-autoload -Uz {dl-magnet,vlc-control}-widget
+#autoload -Uz {dl-magnet,vlc-control}-widget
+
+autoload -U auto-reload
+autoload -U tmux-helper
+alias tm=tmux-helper
 
 {
-	local -aU user_fpath
-	user_fpath=( "$HOME/share/zsh/functions" $fpath )
-	fpath=( $user_fpath )
-	unset user_fpath
+  local -aU user_path
+
+  user_path=('/Users/mattspatola/bin')
+  user_path=( $local_path $user_path $path $local_path_suffix )
+
+  path=( $user_path )
+  unset user_path
+}
+
+{
+  local -aU user_fpath
+
+  user_fpath=('/Users/mattspatola/share/zsh/functions')
+  user_fpath=( $local_fpath $user_fpath $fpath $local_fpath_suffix )
+
+  fpath=( $user_fpath )
+  unset user_fpath
+}
+
+{
+  local -aU user_manpath
+
+  user_manpath=('/Users/mattspatola/share/man')
+  user_manpath=( $local_manpath $user_manpath $manpath $local_manpath_suffix )
+
+  manpath=( $user_manpath )
+  unset user_manpath
 }
 
 new-widget() {
@@ -274,8 +335,8 @@ new-widget() {
 	done
 }
 
-new-widget vlc-control-widget	'^q'
-new-widget dl-magnet-widget	'^s'
+#new-widget vlc-control-widget	'^q'
+#new-widget dl-magnet-widget	'^s'
 bindkey '\ee' edit-command-line
 
 bindkey '\e[1;9D' backward-word
@@ -375,16 +436,16 @@ fi
 # |"    | \"  |  '"'   | "\""  |  $'"'  |
 # +-----+-----+--------+-------+--------+
 
-[[ -n $login ]] && session-prompt
+[[ -n $login ]] && if-exec-exists session-prompt
 
-yes-no() {
-	{read -q "?$* (y/n): "} always {print}
-}
-
-if [[ -f ~vm/sleepimage ]]; then
-	local -a remove_sleepimage
-	remove_sleepimage=(sudo rm ~sleepimage)
-	yes-no "Sleep image exists! \`${(j/ /)remove_sleepimage}\`?" && (
-		set -x && $remove_sleepimage # subshell to limit set -x
-	)
+if overrides-exist; then
+  if functions local-outro &>/dev/null; then
+    local-outro
+    unfunction local-outro
+  else
+    printf 'No `local-outro` function defined by override file %s\n' ${(qq)overrides_file}
+    echo 'If defined, this file will be run at the end of .zshrc'
+  fi
 fi
+
+exec 1>&3 2>&4

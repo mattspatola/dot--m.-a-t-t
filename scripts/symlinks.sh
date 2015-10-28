@@ -83,5 +83,6 @@ done
 
 #link vim .vim
 link vim/vimrc .vimrc
+link tmux/tmux.conf .tmux.conf
 
 # vim: set ts=4 sw=4 tw=0 noet ft=zsh :

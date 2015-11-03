@@ -16,3 +16,6 @@
 [submodule "vim/bundle/dash.vim"]
 	path = vim/bundle/dash.vim
 	url = git@github.com:rizzatti/dash.vim.git
+[submodule "vim/bundle/Conque-Shell"]
+	path = vim/bundle/Conque-Shell
+	url = git://github.com/lrvick/Conque-Shell.git

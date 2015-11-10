@@ -32,6 +32,7 @@ nnoremap <silent> <Leader>ml :call AppendModeline()<CR>
 
 augroup vimrc
     au!
+    au BufNewFile,BufRead zsh?????? set binary
     au BufNewFile,BufRead *.pp setf puppet
 
     au StdinReadPre * let s:std_in=1

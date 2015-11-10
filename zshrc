@@ -304,7 +304,7 @@ alias tm=tmux-helper
 {
   local -aU user_path
 
-  user_path=('/Users/mattspatola/bin')
+  user_path=( "$HOME/bin" )
   user_path=( $local_path $user_path $path $local_path_suffix )
 
   path=( $user_path )
@@ -314,7 +314,7 @@ alias tm=tmux-helper
 {
   local -aU user_fpath
 
-  user_fpath=('/Users/mattspatola/share/zsh/functions')
+  user_fpath=( "$HOME/share/zsh/functions" )
   user_fpath=( $local_fpath $user_fpath $fpath $local_fpath_suffix )
 
   fpath=( $user_fpath )
@@ -324,7 +324,7 @@ alias tm=tmux-helper
 {
   local -aU user_manpath
 
-  user_manpath=('/Users/mattspatola/share/man')
+  user_manpath=( "$HOME/share/man" )
   user_manpath=( $local_manpath $user_manpath $manpath $local_manpath_suffix )
 
   manpath=( $user_manpath )
